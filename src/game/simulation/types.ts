@@ -1,6 +1,6 @@
 export type Team = 'heroes' | 'enemies';
 
-export type Phase = 'player' | 'enemy' | 'victory' | 'defeat';
+export type Phase = 'player' | 'enemy' | 'reward' | 'victory' | 'defeat';
 
 export type AttackOutcome = 'hit' | 'miss' | 'critical' | 'fumble';
 
@@ -73,6 +73,10 @@ export interface LogEntry {
 
 export interface GameState {
   activeHeroId: HeroId;
+  currentRoomIndex: number;
+  roomName: string;
+  rewardOptions: RewardOption[];
+  selectedRewards: string[];
   width: number;
   height: number;
   tiles: string[];
@@ -108,4 +112,10 @@ export interface AttackResult extends ActionResult {
 export interface SkillTarget {
   targetId?: string;
   position?: Position;
+}
+
+export interface RewardOption {
+  id: 'field_dressing' | 'ember_edge' | 'tactical_focus';
+  name: string;
+  description: string;
 }

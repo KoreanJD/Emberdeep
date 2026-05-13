@@ -9,6 +9,7 @@ export interface HudActions {
   selectedSkillId: string | null;
   setMode(mode: ActionMode): void;
   useSkill(skillId: string): void;
+  selectReward(rewardId: string): void;
   selectHero(heroId: HeroId): void;
   endTurn(): void;
   reset(): void;
@@ -89,6 +90,26 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
         <p>${actions.status}</p>
       </section>
 
+      ${
+        state.phase === 'reward'
+          ? `<section class="reward-panel">
+              <h2>Rewards</h2>
+              <div class="reward-grid">
+                ${state.rewardOptions
+                  .map(
+                    (reward) => `
+                      <button id="reward-${reward.id}">
+                        <span>${reward.name}</span>
+                        <small>${reward.description}</small>
+                      </button>
+                    `,
+                  )
+                  .join('')}
+              </div>
+            </section>`
+          : ''
+      }
+
       <section class="enemy-list">
         <h2>Enemies</h2>
         ${enemies.map(renderEntity).join('')}
@@ -118,6 +139,11 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
     root
       .querySelector<HTMLButtonElement>(`#hero-${heroOption.id}`)
       ?.addEventListener('click', () => actions.selectHero(heroOption.id as HeroId));
+  });
+  state.rewardOptions.forEach((reward) => {
+    root
+      .querySelector<HTMLButtonElement>(`#reward-${reward.id}`)
+      ?.addEventListener('click', () => actions.selectReward(reward.id));
   });
   root.querySelector<HTMLButtonElement>('#end-turn')?.addEventListener('click', actions.endTurn);
   root.querySelector<HTMLButtonElement>('#reset-game')?.addEventListener('click', actions.reset);
@@ -161,6 +187,8 @@ function phaseLabel(phase: GameState['phase']): string {
       return 'Player Turn';
     case 'enemy':
       return 'Enemy Turn';
+    case 'reward':
+      return 'Reward';
     case 'victory':
       return 'Victory';
     case 'defeat':

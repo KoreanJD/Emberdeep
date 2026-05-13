@@ -223,24 +223,62 @@ const goblinScout = (id: string, position: { x: number; y: number }): Entity => 
   statuses: [],
 });
 
+const roomDefinitions = [
+  {
+    name: 'First Chamber',
+    enemies: [
+      { id: 'goblin_1', position: { x: 6, y: 3 } },
+      { id: 'goblin_2', position: { x: 7, y: 4 } },
+    ],
+  },
+  {
+    name: 'Mushroom Gallery',
+    enemies: [
+      { id: 'goblin_1', position: { x: 6, y: 2 } },
+      { id: 'goblin_2', position: { x: 7, y: 4 } },
+      { id: 'goblin_3', position: { x: 5, y: 5 } },
+    ],
+  },
+];
+
 export function getHeroDefinitions(): Entity[] {
   return Object.values(heroDefinitions).map((hero) => structuredClone(hero));
 }
 
-export function createGoblinCaveEncounter(heroId: HeroId = 'hero_warrior'): GameState {
-  const hero = structuredClone(heroDefinitions[heroId]);
+export function getDungeonRoomCount(): number {
+  return roomDefinitions.length;
+}
+
+export function createGoblinCaveEncounter(
+  heroId: HeroId = 'hero_warrior',
+  roomIndex = 0,
+  heroOverride?: Entity,
+  selectedRewards: string[] = [],
+): GameState {
+  const room = roomDefinitions[roomIndex] ?? roomDefinitions[0];
+  const hero = heroOverride ? structuredClone(heroOverride) : structuredClone(heroDefinitions[heroId]);
+  const readyHero = {
+    ...hero,
+    id: heroId,
+    team: 'heroes' as const,
+    position: { x: 1, y: 3 },
+    ap: hero.maxAp,
+  };
 
   return {
     activeHeroId: heroId,
+    currentRoomIndex: roomIndex,
+    roomName: room.name,
+    rewardOptions: [],
+    selectedRewards,
     width: 10,
     height: 8,
     tiles,
     phase: 'player',
     round: 1,
     entities: {
-      [hero.id]: hero,
-      goblin_1: goblinScout('goblin_1', { x: 6, y: 3 }),
-      goblin_2: goblinScout('goblin_2', { x: 7, y: 4 }),
+      [readyHero.id]: readyHero,
+      ...Object.fromEntries(room.enemies.map((enemy) => [enemy.id, goblinScout(enemy.id, enemy.position)])),
     },
     log: [
       {

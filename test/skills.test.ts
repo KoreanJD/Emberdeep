@@ -175,7 +175,7 @@ describe('hero skills', () => {
     expect(attack.state.entities.hero_cleric.statuses).toEqual([]);
   });
 
-  test('burning damages enemies at the start of the enemy turn and can trigger victory', () => {
+  test('burning damages enemies at the start of the enemy turn and can clear the room', () => {
     const state = placeGoblin(createGoblinCaveEncounter('hero_pyromancer'), 5, 3);
     const burned = resolveSkill(state, 'hero_pyromancer', 'fire_bolt', { targetId: 'goblin_1' }, fixedDice([8], [1]));
     const readyToBurn = {
@@ -195,7 +195,7 @@ describe('hero skills', () => {
 
     const afterTurn = endPlayerTurn(readyToBurn, fixedDice([], []));
 
-    expect(afterTurn.phase).toBe('victory');
+    expect(afterTurn.phase).toBe('reward');
     expect(afterTurn.entities.goblin_1.hp).toBe(0);
     expect(afterTurn.log.some((entry) => entry.message.includes('Burning scorches Goblin Scout for 2'))).toBe(true);
   });

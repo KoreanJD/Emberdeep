@@ -135,6 +135,7 @@ button:disabled {
 .hero-card,
 .hero-select,
 .skill-panel,
+.reward-panel,
 .status-panel,
 .enemy-list,
 .combat-log {
@@ -248,17 +249,24 @@ button:disabled {
   gap: 0.7rem;
 }
 
-.skill-grid {
+.skill-grid,
+.reward-grid {
   display: grid;
   gap: 0.5rem;
 }
 
-.skill-grid button {
+.skill-grid button,
+.reward-grid button {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   text-align: left;
+}
+
+.reward-grid button {
+  align-items: flex-start;
+  flex-direction: column;
 }
 
 .skill-grid button.active {

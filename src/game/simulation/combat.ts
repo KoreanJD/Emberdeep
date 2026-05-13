@@ -1,4 +1,5 @@
 import { manhattan } from './movement';
+import { resolveRoomClear } from './progression';
 import type { AttackResult, AttackRoll, DiceRoller, Entity, GameState } from './types';
 
 export function resolveAttack(
@@ -79,10 +80,7 @@ export function resolveAttack(
   });
 
   if (allEnemiesDefeated(nextState)) {
-    nextState = appendLog({ ...nextState, phase: 'victory' }, {
-      type: 'system',
-      message: 'Victory! The goblins collapse and the first chamber is secure.',
-    });
+    nextState = resolveRoomClear(nextState);
   }
 
   return { ok: true, state: nextState, roll };

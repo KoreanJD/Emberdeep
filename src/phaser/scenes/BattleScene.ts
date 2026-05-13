@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { createGoblinCaveEncounter, getHeroDefinitions } from '../../game/content/encounters';
 import { resolveAttack } from '../../game/simulation/combat';
 import { randomDice } from '../../game/simulation/dice';
-import { endPlayerTurn, moveEntity } from '../../game/simulation/gameState';
+import { endPlayerTurn, moveEntity, selectReward } from '../../game/simulation/gameState';
 import { getReachablePositions, isAdjacent, positionKey } from '../../game/simulation/movement';
 import { resolveSkill } from '../../game/simulation/skills';
 import type { Entity, GameState, HeroId, Position } from '../../game/simulation/types';
@@ -123,6 +123,7 @@ export class BattleScene extends Phaser.Scene {
         this.render();
       },
       useSkill: (skillId) => this.useSkill(skillId),
+      selectReward: (rewardId) => this.selectReward(rewardId),
       selectHero: (heroId) => this.selectHero(heroId),
       endTurn: () => this.endTurn(),
       reset: () => this.reset(),
@@ -135,6 +136,15 @@ export class BattleScene extends Phaser.Scene {
     this.mode = 'move';
     this.selectedSkillId = null;
     this.status = `${this.activeHero().name} enters the first chamber.`;
+    this.render();
+  }
+
+  private selectReward(rewardId: string): void {
+    const result = selectReward(this.state, rewardId);
+    this.state = result.state;
+    this.mode = 'move';
+    this.selectedSkillId = null;
+    this.status = result.ok ? `${this.state.roomName} begins.` : result.reason ?? 'Invalid reward.';
     this.render();
   }
 

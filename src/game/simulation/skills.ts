@@ -1,4 +1,5 @@
 import { isWalkable, manhattan } from './movement';
+import { resolveRoomClear } from './progression';
 import type {
   AttackResult,
   AttackRoll,
@@ -376,16 +377,7 @@ function withVictory(state: GameState): GameState {
     return state;
   }
 
-  return appendLog(
-    {
-      ...state,
-      phase: 'victory',
-    },
-    {
-      type: 'system',
-      message: 'Victory! The goblins collapse and the first chamber is secure.',
-    },
-  );
+  return resolveRoomClear(state);
 }
 
 function reject(state: GameState, reason: string): AttackResult {

@@ -1,5 +1,7 @@
 import { resolveEnemyAttack } from './combat';
+import { createGoblinCaveEncounter } from '../content/encounters';
 import { findStepToward, getReachablePositions, isAdjacent, positionKey } from './movement';
+import { resolveRoomClear } from './progression';
 import type { ActionResult, DiceRoller, Entity, GameState, Position } from './types';
 
 export function moveEntity(state: GameState, entityId: string, destination: Position): ActionResult {
@@ -47,10 +49,7 @@ export function endPlayerTurn(state: GameState, dice: DiceRoller): GameState {
   }
 
   if (isVictory(state)) {
-    return appendLog({ ...state, phase: 'victory' }, {
-      type: 'system',
-      message: 'Victory! The goblins collapse and the first chamber is secure.',
-    });
+    return resolveRoomClear(state);
   }
 
   let nextState = appendLog({ ...state, phase: 'enemy' }, {
@@ -60,10 +59,7 @@ export function endPlayerTurn(state: GameState, dice: DiceRoller): GameState {
   nextState = applyEnemyTurnStartStatuses(nextState);
 
   if (isVictory(nextState)) {
-    return appendLog({ ...nextState, phase: 'victory' }, {
-      type: 'system',
-      message: 'Victory! The goblins collapse and the first chamber is secure.',
-    });
+    return resolveRoomClear(nextState);
   }
 
   for (const enemy of Object.values(nextState.entities).filter(
@@ -76,10 +72,7 @@ export function endPlayerTurn(state: GameState, dice: DiceRoller): GameState {
   }
 
   if (isVictory(nextState)) {
-    return appendLog({ ...nextState, phase: 'victory' }, {
-      type: 'system',
-      message: 'Victory! The goblins collapse and the first chamber is secure.',
-    });
+    return resolveRoomClear(nextState);
   }
 
   return appendLog(refreshHeroes({ ...nextState, phase: 'player', round: nextState.round + 1 }), {
@@ -94,6 +87,67 @@ export function isVictory(state: GameState): boolean {
 
 export function isDefeat(state: GameState): boolean {
   return Object.values(state.entities).every((entity) => entity.team !== 'heroes' || entity.hp <= 0);
+}
+
+export function selectReward(state: GameState, rewardId: string): ActionResult {
+  if (state.phase !== 'reward') {
+    return { ok: false, state, reason: 'No reward is available.' };
+  }
+
+  const reward = state.rewardOptions.find((option) => option.id === rewardId);
+  if (!reward) {
+    return { ok: false, state, reason: 'Reward is not available.' };
+  }
+
+  const hero = applyRewardToHero(state.entities[state.activeHeroId], reward.id);
+  const nextState = createGoblinCaveEncounter(
+    state.activeHeroId,
+    state.currentRoomIndex + 1,
+    hero,
+    [...state.selectedRewards, reward.id],
+  );
+
+  return {
+    ok: true,
+    state: appendLog(
+      {
+        ...nextState,
+        log: state.log,
+      },
+      {
+        type: 'system',
+        message: `${reward.name} chosen. The party enters ${nextState.roomName}.`,
+      },
+    ),
+  };
+}
+
+function applyRewardToHero(hero: Entity, rewardId: string): Entity {
+  switch (rewardId) {
+    case 'field_dressing':
+      return {
+        ...hero,
+        hp: Math.min(hero.maxHp, hero.hp + 3),
+      };
+    case 'ember_edge':
+      return {
+        ...hero,
+        basicAttack: {
+          ...hero.basicAttack,
+          damageBonus: (hero.basicAttack.damageBonus ?? 0) + 1,
+        },
+      };
+    case 'tactical_focus':
+      return {
+        ...hero,
+        statuses: [
+          ...hero.statuses.filter((status) => status.id !== 'blessed'),
+          { id: 'blessed', name: 'Blessed', value: 2 },
+        ],
+      };
+    default:
+      return hero;
+  }
 }
 
 function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): GameState {
