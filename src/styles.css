@@ -136,6 +136,7 @@ button:disabled {
 .hero-select,
 .skill-panel,
 .reward-panel,
+.result-panel,
 .status-panel,
 .enemy-list,
 .combat-log {
@@ -267,6 +268,56 @@ button:disabled {
 .reward-grid button {
   align-items: flex-start;
   flex-direction: column;
+}
+
+.result-panel {
+  display: grid;
+  gap: 0.75rem;
+  border-color: rgba(240, 184, 87, 0.7);
+  background: linear-gradient(180deg, rgba(76, 56, 34, 0.72), rgba(17, 19, 15, 0.66));
+}
+
+.result-panel.defeat {
+  border-color: rgba(214, 75, 60, 0.72);
+  background: linear-gradient(180deg, rgba(71, 31, 28, 0.72), rgba(17, 19, 15, 0.66));
+}
+
+.result-panel h2 {
+  color: var(--text);
+  font-size: 1.2rem;
+}
+
+.result-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.result-stats {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.result-stats div {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.result-stats dt {
+  color: var(--gold);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.result-stats dd {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.86rem;
 }
 
 .skill-grid button.active {

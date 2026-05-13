@@ -76,7 +76,7 @@ export class BattleScene extends Phaser.Scene {
       this.state.phase === 'defeat'
         ? 'The goblins overrun the chamber.'
         : this.state.phase === 'victory'
-          ? 'The first chamber is secure.'
+          ? 'Gorvak falls. Emberdeep is cleared.'
           : 'Your turn. Spend 2 AP before the goblins close in.';
     this.render();
   }

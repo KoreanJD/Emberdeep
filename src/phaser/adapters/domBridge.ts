@@ -90,6 +90,8 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
         <p>${actions.status}</p>
       </section>
 
+      ${state.phase === 'victory' || state.phase === 'defeat' ? renderResultPanel(state) : ''}
+
       ${
         state.phase === 'reward'
           ? `<section class="reward-panel">
@@ -145,8 +147,41 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
       .querySelector<HTMLButtonElement>(`#reward-${reward.id}`)
       ?.addEventListener('click', () => actions.selectReward(reward.id));
   });
+  root.querySelector<HTMLButtonElement>('#restart-run')?.addEventListener('click', actions.reset);
   root.querySelector<HTMLButtonElement>('#end-turn')?.addEventListener('click', actions.endTurn);
   root.querySelector<HTMLButtonElement>('#reset-game')?.addEventListener('click', actions.reset);
+}
+
+export function renderResultPanel(state: GameState): string {
+  const cleared = state.phase === 'victory';
+  const rewardNames = state.selectedRewards.map(rewardLabel);
+
+  return `
+    <section class="result-panel ${cleared ? 'victory' : 'defeat'}" aria-live="polite">
+      <span class="label">Run Result</span>
+      <h2>${cleared ? 'Dungeon Cleared' : 'Dungeon Failed'}</h2>
+      <p>
+        ${cleared
+          ? `${state.roomName} is secure. The stolen emberstone is recovered.`
+          : `The party fell in ${state.roomName}. Regroup and try again.`}
+      </p>
+      <dl class="result-stats">
+        <div>
+          <dt>Final Room</dt>
+          <dd>${state.roomName}</dd>
+        </div>
+        <div>
+          <dt>Round</dt>
+          <dd>Round ${state.round}</dd>
+        </div>
+        <div>
+          <dt>Rewards</dt>
+          <dd>${rewardNames.length > 0 ? rewardNames.join(' · ') : 'None'}</dd>
+        </div>
+      </dl>
+      <button id="restart-run">${cleared ? 'New Run' : 'Try Again'}</button>
+    </section>
+  `;
 }
 
 function renderEntity(entity: Entity): string {
@@ -193,5 +228,18 @@ function phaseLabel(phase: GameState['phase']): string {
       return 'Victory';
     case 'defeat':
       return 'Defeat';
+  }
+}
+
+function rewardLabel(rewardId: string): string {
+  switch (rewardId) {
+    case 'field_dressing':
+      return 'Field Dressing';
+    case 'ember_edge':
+      return 'Ember Edge';
+    case 'tactical_focus':
+      return 'Tactical Focus';
+    default:
+      return rewardId;
   }
 }
