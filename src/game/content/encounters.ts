@@ -327,6 +327,33 @@ const monsterDefinitions: Record<string, Omit<Entity, 'id' | 'position'>> = {
     statuses: [],
     ai: 'skirmisher',
   },
+  gorvak: {
+    name: 'Gorvak, Ember Goblin Chief',
+    team: 'enemies',
+    hp: 36,
+    maxHp: 36,
+    defense: 14,
+    move: 4,
+    ap: 0,
+    maxAp: 0,
+    stats: {
+      strength: 5,
+      agility: 1,
+      intellect: 2,
+      will: 3,
+    },
+    basicAttack: {
+      name: 'cleaves',
+      range: 1,
+      attackBonus: 5,
+      damageDice: 1,
+      damageDie: 10,
+      damageBonus: 3,
+    },
+    skills: [],
+    statuses: [],
+    ai: 'boss',
+  },
 };
 
 const createMonster = (monsterId: string, id: string, position: { x: number; y: number }): Entity => {
@@ -354,6 +381,12 @@ const roomDefinitions = [
       { id: 'goblin_archer_1', monsterId: 'goblin_archer', position: { x: 7, y: 4 } },
       { id: 'goblin_shaman_1', monsterId: 'goblin_shaman', position: { x: 5, y: 5 } },
       { id: 'cave_bat_1', monsterId: 'cave_bat', position: { x: 6, y: 5 } },
+    ],
+  },
+  {
+    name: "Gorvak's Forge",
+    enemies: [
+      { id: 'gorvak', monsterId: 'gorvak', position: { x: 6, y: 3 } },
     ],
   },
 ];

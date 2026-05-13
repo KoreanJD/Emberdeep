@@ -71,7 +71,7 @@ describe('dungeon progression', () => {
     expect(Object.values(result.state.entities).filter((entity) => entity.team === 'enemies' && entity.hp > 0)).toHaveLength(4);
   });
 
-  test('clearing the final combat room ends the dungeon with victory', () => {
+  test('clearing room two opens the boss room reward step', () => {
     const state = createGoblinCaveEncounter('hero_warrior', 1);
     const finalRoom = {
       ...state,
@@ -98,7 +98,7 @@ describe('dungeon progression', () => {
 
     const result = resolveAttack(finalRoom, 'hero_warrior', 'goblin_brawler_1', fixedDice([20], [8, 8]));
 
-    expect(result.state.phase).toBe('victory');
-    expect(result.state.log.at(-1)?.message).toContain('Victory');
+    expect(result.state.phase).toBe('reward');
+    expect(result.state.log.at(-1)?.message).toContain('Choose one reward');
   });
 });

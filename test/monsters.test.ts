@@ -32,6 +32,7 @@ describe('monster roster', () => {
       'goblin_brawler',
       'goblin_shaman',
       'cave_bat',
+      'gorvak',
     ]);
     expect(monsters.find((monster) => monster.id === 'goblin_archer')).toMatchObject({
       name: 'Goblin Archer',

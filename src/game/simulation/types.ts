@@ -8,7 +8,7 @@ export type StatKey = 'strength' | 'agility' | 'intellect' | 'will';
 
 export type SkillTargetKind = 'self' | 'ally' | 'enemy' | 'position';
 
-export type MonsterAi = 'nearest_melee' | 'ranged' | 'bruiser' | 'support' | 'skirmisher';
+export type MonsterAi = 'nearest_melee' | 'ranged' | 'bruiser' | 'support' | 'skirmisher' | 'boss';
 
 export interface Position {
   x: number;
@@ -43,7 +43,7 @@ export interface SkillDefinition {
 }
 
 export interface StatusEffect {
-  id: 'shielded' | 'rooted' | 'burning' | 'blessed';
+  id: 'shielded' | 'rooted' | 'burning' | 'blessed' | 'summoned' | 'enraged';
   name: string;
   value: number;
 }

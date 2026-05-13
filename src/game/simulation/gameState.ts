@@ -164,15 +164,21 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
 
   let nextState = state;
   const currentEnemy = nextState.entities[enemyId];
+  const bossState = maybeUseBossAction(nextState, currentEnemy);
+  if (bossState) {
+    nextState = bossState;
+  }
   const supportAction = maybeUseSupportAction(nextState, currentEnemy);
   if (supportAction) {
     return supportAction;
   }
 
+  const activeEnemy = nextState.entities[enemyId];
+
   if (
-    currentEnemy.ai === 'ranged' &&
+    activeEnemy.ai === 'ranged' &&
     hero.hp > 0 &&
-    manhattan(currentEnemy.position, hero.position) <= currentEnemy.basicAttack.range
+    manhattan(activeEnemy.position, hero.position) <= activeEnemy.basicAttack.range
   ) {
     nextState = resolveEnemyAttack(nextState, enemyId, hero.id, dice);
     return replaceEnemyAttackLog(nextState, hero.id, enemyId);
@@ -180,8 +186,8 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
 
   let movementSkipped = false;
 
-  if (!isAdjacent(currentEnemy.position, hero.position)) {
-    if (currentEnemy.statuses.some((status) => status.id === 'rooted')) {
+  if (!isAdjacent(activeEnemy.position, hero.position)) {
+    if (activeEnemy.statuses.some((status) => status.id === 'rooted')) {
       movementSkipped = true;
       nextState = appendLog(
         {
@@ -189,14 +195,14 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
           entities: {
             ...nextState.entities,
             [enemyId]: {
-              ...currentEnemy,
-              statuses: currentEnemy.statuses.filter((status) => status.id !== 'rooted'),
+              ...activeEnemy,
+              statuses: activeEnemy.statuses.filter((status) => status.id !== 'rooted'),
             },
           },
         },
         {
           type: 'system',
-          message: `${currentEnemy.name} is rooted and cannot move.`,
+          message: `${activeEnemy.name} is rooted and cannot move.`,
         },
       );
     }
@@ -208,7 +214,7 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
           entities: {
             ...nextState.entities,
             [enemyId]: {
-              ...currentEnemy,
+              ...nextState.entities[enemyId],
               position: step,
             },
           },
@@ -268,6 +274,97 @@ function maybeUseSupportAction(state: GameState, enemy: Entity): GameState | nul
       message: `${enemy.name} mends ${woundedAlly.name} for 3.`,
     },
   );
+}
+
+function maybeUseBossAction(state: GameState, enemy: Entity): GameState | null {
+  if (enemy.ai !== 'boss') {
+    return null;
+  }
+
+  let nextState = state;
+  let nextBoss = nextState.entities[enemy.id];
+
+  if (nextBoss.hp <= Math.floor(nextBoss.maxHp / 2) && !nextBoss.statuses.some((status) => status.id === 'summoned')) {
+    nextBoss = {
+      ...nextBoss,
+      statuses: [...nextBoss.statuses, { id: 'summoned', name: 'Summoned', value: 1 }],
+    };
+    nextState = appendLog(
+      {
+        ...nextState,
+        entities: {
+          ...nextState.entities,
+          [enemy.id]: nextBoss,
+          gorvak_scout_1: createBossScout('gorvak_scout_1', { x: 5, y: 2 }),
+          gorvak_scout_2: createBossScout('gorvak_scout_2', { x: 7, y: 4 }),
+        },
+      },
+      {
+        type: 'system',
+        message: 'Gorvak calls two scouts from the forge smoke.',
+      },
+    );
+  }
+
+  nextBoss = nextState.entities[enemy.id];
+  if (nextBoss.hp <= 10 && !nextBoss.statuses.some((status) => status.id === 'enraged')) {
+    nextBoss = {
+      ...nextBoss,
+      statuses: [...nextBoss.statuses, { id: 'enraged', name: 'Enraged', value: 2 }],
+      basicAttack: {
+        ...nextBoss.basicAttack,
+        damageBonus: (nextBoss.basicAttack.damageBonus ?? 0) + 2,
+      },
+      defense: nextBoss.defense - 1,
+    };
+    nextState = appendLog(
+      {
+        ...nextState,
+        entities: {
+          ...nextState.entities,
+          [enemy.id]: nextBoss,
+        },
+      },
+      {
+        type: 'system',
+        message: 'Gorvak enters a rage.',
+      },
+    );
+  }
+
+  return nextState === state ? null : nextState;
+}
+
+function createBossScout(id: string, position: Position): Entity {
+  return {
+    id,
+    name: 'Goblin Scout',
+    team: 'enemies',
+    hp: 5,
+    maxHp: 5,
+    defense: 12,
+    move: 5,
+    ap: 0,
+    maxAp: 0,
+    position,
+    stats: {
+      strength: 1,
+      agility: 3,
+      intellect: 0,
+      will: 0,
+    },
+    basicAttack: {
+      name: 'stabs',
+      range: 1,
+      attackBonus: 3,
+      damageDice: 1,
+      damageDie: 4,
+      damageBonus: 1,
+    },
+    skills: [],
+    statuses: [],
+    ai: 'nearest_melee',
+  };
 }
 
 function replaceEnemyAttackLog(state: GameState, heroId: string, enemyId: string): GameState {
