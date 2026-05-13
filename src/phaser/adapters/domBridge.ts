@@ -1,12 +1,14 @@
 import type { Entity, GameState, HeroId } from '../../game/simulation/types';
 
-export type ActionMode = 'move' | 'attack';
+export type ActionMode = 'move' | 'attack' | 'skill';
 
 export interface HudActions {
   mode: ActionMode;
   status: string;
   heroOptions: Entity[];
+  selectedSkillId: string | null;
   setMode(mode: ActionMode): void;
+  useSkill(skillId: string): void;
   selectHero(heroId: HeroId): void;
   endTurn(): void;
   reset(): void;
@@ -33,6 +35,7 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
         <div class="ap-row" aria-label="Action points">
           ${Array.from({ length: hero.maxAp }, (_, index) => `<span class="${index < hero.ap ? 'ap-dot filled' : 'ap-dot'}"></span>`).join('')}
         </div>
+        ${hero.statuses.length > 0 ? `<p class="status-tags">${hero.statuses.map((status) => status.name).join(' · ')}</p>` : ''}
       </section>
 
       <section class="hero-select">
@@ -55,6 +58,27 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
         <button id="mode-attack" class="${actions.mode === 'attack' ? 'active' : ''}" ${canAct ? '' : 'disabled'}>Attack</button>
         <button id="end-turn" ${state.phase === 'player' && hero.hp > 0 ? '' : 'disabled'}>End Turn</button>
         <button id="reset-game">Reset</button>
+      </section>
+
+      <section class="skill-panel">
+        <h2>Skills</h2>
+        <div class="skill-grid">
+          ${hero.skills
+            .map(
+              (skill) => `
+                <button
+                  id="skill-${skill.id}"
+                  class="${actions.selectedSkillId === skill.id ? 'active' : ''}"
+                  title="${skill.description}"
+                  ${state.phase === 'player' && hero.hp > 0 && hero.ap >= skill.cost ? '' : 'disabled'}
+                >
+                  <span>${skill.name}</span>
+                  <small>${skill.cost} AP</small>
+                </button>
+              `,
+            )
+            .join('')}
+        </div>
       </section>
 
       <section class="status-panel">
@@ -85,6 +109,11 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
 
   root.querySelector<HTMLButtonElement>('#mode-move')?.addEventListener('click', () => actions.setMode('move'));
   root.querySelector<HTMLButtonElement>('#mode-attack')?.addEventListener('click', () => actions.setMode('attack'));
+  hero.skills.forEach((skill) => {
+    root
+      .querySelector<HTMLButtonElement>(`#skill-${skill.id}`)
+      ?.addEventListener('click', () => actions.useSkill(skill.id));
+  });
   actions.heroOptions.forEach((heroOption) => {
     root
       .querySelector<HTMLButtonElement>(`#hero-${heroOption.id}`)

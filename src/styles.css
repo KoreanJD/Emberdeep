@@ -134,6 +134,7 @@ button:disabled {
 
 .hero-card,
 .hero-select,
+.skill-panel,
 .status-panel,
 .enemy-list,
 .combat-log {
@@ -240,6 +241,39 @@ button:disabled {
   border-color: var(--gold);
   background: #4c3822;
   color: #fff6de;
+}
+
+.skill-panel {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.skill-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.skill-grid button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.skill-grid button.active {
+  border-color: var(--ember);
+  background: #4c2b22;
+}
+
+.skill-grid small,
+.status-tags {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.status-tags {
+  margin: 0.65rem 0 0;
 }
 
 .status-panel {

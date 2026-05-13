@@ -9,7 +9,7 @@ const directions: Position[] = [
 
 export function getReachablePositions(state: GameState, entityId: string): Position[] {
   const entity = state.entities[entityId];
-  if (!entity || entity.hp <= 0 || entity.ap <= 0) {
+  if (!entity || entity.hp <= 0 || entity.ap <= 0 || entity.statuses.some((status) => status.id === 'rooted')) {
     return [];
   }
 
@@ -50,7 +50,7 @@ export function getReachablePositions(state: GameState, entityId: string): Posit
 
 export function findStepToward(state: GameState, entityId: string, target: Position): Position | null {
   const entity = state.entities[entityId];
-  if (!entity || entity.hp <= 0) {
+  if (!entity || entity.hp <= 0 || entity.statuses.some((status) => status.id === 'rooted')) {
     return null;
   }
 

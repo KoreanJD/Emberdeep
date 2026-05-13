@@ -52,23 +52,30 @@ export function resolveAttack(
   }
 
   const damage = rollDamage(attacker, outcome === 'critical', dice);
+  const mitigated = applyShield(target, damage.total);
   const nextTarget = {
-    ...target,
-    hp: Math.max(0, target.hp - damage.total),
+    ...mitigated.entity,
+    hp: Math.max(0, target.hp - mitigated.total),
+  };
+  const nextAttacker = {
+    ...nextState.entities[attacker.id],
+    statuses: nextState.entities[attacker.id].statuses.filter((status) => status.id !== 'blessed'),
   };
 
   nextState = {
     ...nextState,
     entities: {
       ...nextState.entities,
+      [attacker.id]: nextAttacker,
       [target.id]: nextTarget,
     },
   };
 
   const criticalText = outcome === 'critical' ? ' Critical!' : '';
+  const shieldText = mitigated.reduced > 0 ? ` Shield absorbs ${mitigated.reduced}.` : '';
   nextState = appendLog(nextState, {
     type: 'attack',
-    message: `${attacker.name} ${attacker.basicAttack.name} ${target.name}: d20 ${d20} + ${bonus} = ${total} vs ${target.defense}.${criticalText} Damage ${damage.detail} = ${damage.total}.`,
+    message: `${attacker.name} ${attacker.basicAttack.name} ${target.name}: d20 ${d20} + ${bonus} = ${total} vs ${target.defense}.${criticalText} Damage ${damage.detail} = ${damage.total}.${shieldText}`,
   });
 
   if (allEnemiesDefeated(nextState)) {
@@ -92,11 +99,12 @@ export function resolveEnemyAttack(
 }
 
 function attackBonus(entity: Entity): number {
+  const blessBonus = entity.statuses.some((status) => status.id === 'blessed') ? 2 : 0;
   if (entity.basicAttack.attackStat) {
-    return entity.stats[entity.basicAttack.attackStat];
+    return entity.stats[entity.basicAttack.attackStat] + blessBonus;
   }
 
-  return entity.basicAttack.attackBonus ?? 0;
+  return (entity.basicAttack.attackBonus ?? 0) + blessBonus;
 }
 
 function attackOutcome(d20: number, total: number, defense: number): AttackRoll['outcome'] {
@@ -152,6 +160,23 @@ function spendAp(state: GameState, entityId: string): GameState {
 
 function reject(state: GameState, reason: string): AttackResult {
   return { ok: false, state, reason };
+}
+
+function applyShield(entity: Entity, damage: number): { entity: Entity; total: number; reduced: number } {
+  const shield = entity.statuses.find((status) => status.id === 'shielded');
+  if (!shield) {
+    return { entity, total: damage, reduced: 0 };
+  }
+
+  const reduced = Math.min(shield.value, damage);
+  return {
+    entity: {
+      ...entity,
+      statuses: entity.statuses.filter((status) => status.id !== 'shielded'),
+    },
+    total: damage - reduced,
+    reduced,
+  };
 }
 
 function allEnemiesDefeated(state: GameState): boolean {

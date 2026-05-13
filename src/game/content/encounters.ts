@@ -37,6 +37,25 @@ const heroDefinitions: Record<HeroId, Entity> = {
       damageDie: 8,
       damageBonusStat: 'strength',
     },
+    skills: [
+      {
+        id: 'shield_guard',
+        name: 'Shield Guard',
+        cost: 1,
+        target: 'self',
+        range: 0,
+        description: 'Raise a shield and reduce the next incoming damage by 3.',
+      },
+      {
+        id: 'push',
+        name: 'Push',
+        cost: 1,
+        target: 'enemy',
+        range: 1,
+        description: 'Strike an adjacent enemy and shove it one tile away.',
+      },
+    ],
+    statuses: [],
   },
   hero_archer: {
     id: 'hero_archer',
@@ -63,6 +82,25 @@ const heroDefinitions: Record<HeroId, Entity> = {
       damageDie: 6,
       damageBonusStat: 'agility',
     },
+    skills: [
+      {
+        id: 'aimed_shot',
+        name: 'Aimed Shot',
+        cost: 1,
+        target: 'enemy',
+        range: 5,
+        description: 'Take a careful shot with +2 to hit and higher weapon dice.',
+      },
+      {
+        id: 'pinning_shot',
+        name: 'Pinning Shot',
+        cost: 1,
+        target: 'enemy',
+        range: 5,
+        description: 'Damage an enemy and root it on a hit.',
+      },
+    ],
+    statuses: [],
   },
   hero_pyromancer: {
     id: 'hero_pyromancer',
@@ -89,6 +127,25 @@ const heroDefinitions: Record<HeroId, Entity> = {
       damageDie: 6,
       damageBonusStat: 'intellect',
     },
+    skills: [
+      {
+        id: 'fire_bolt',
+        name: 'Fire Bolt',
+        cost: 1,
+        target: 'enemy',
+        range: 5,
+        description: 'Hurl a burning bolt at one enemy.',
+      },
+      {
+        id: 'fire_burst',
+        name: 'Fire Burst',
+        cost: 2,
+        target: 'position',
+        range: 5,
+        description: 'Explode a 3x3 area for 2d6 fire damage.',
+      },
+    ],
+    statuses: [],
   },
   hero_cleric: {
     id: 'hero_cleric',
@@ -115,6 +172,25 @@ const heroDefinitions: Record<HeroId, Entity> = {
       damageDie: 6,
       damageBonusStat: 'strength',
     },
+    skills: [
+      {
+        id: 'heal',
+        name: 'Heal',
+        cost: 1,
+        target: 'ally',
+        range: 5,
+        description: 'Restore 1d6 + will HP to an ally.',
+      },
+      {
+        id: 'bless',
+        name: 'Bless',
+        cost: 1,
+        target: 'ally',
+        range: 5,
+        description: 'Give an ally +2 on their next attack roll.',
+      },
+    ],
+    statuses: [],
   },
 };
 
@@ -143,6 +219,8 @@ const goblinScout = (id: string, position: { x: number; y: number }): Entity => 
     damageDie: 4,
     damageBonus: 1,
   },
+  skills: [],
+  statuses: [],
 });
 
 export function getHeroDefinitions(): Entity[] {

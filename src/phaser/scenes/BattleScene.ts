@@ -4,6 +4,7 @@ import { resolveAttack } from '../../game/simulation/combat';
 import { randomDice } from '../../game/simulation/dice';
 import { endPlayerTurn, moveEntity } from '../../game/simulation/gameState';
 import { getReachablePositions, isAdjacent, positionKey } from '../../game/simulation/movement';
+import { resolveSkill } from '../../game/simulation/skills';
 import type { Entity, GameState, HeroId, Position } from '../../game/simulation/types';
 import { type ActionMode, renderHud } from '../adapters/domBridge';
 
@@ -15,6 +16,7 @@ export class BattleScene extends Phaser.Scene {
   private mode: ActionMode = 'move';
   private status = 'Move up to 4 tiles, then strike when adjacent. Each action costs 1 AP.';
   private selectedHeroId: HeroId = 'hero_warrior';
+  private selectedSkillId: string | null = null;
   private heroOptions = getHeroDefinitions();
   private board!: Phaser.GameObjects.Graphics;
   private labels: Phaser.GameObjects.Text[] = [];
@@ -48,6 +50,11 @@ export class BattleScene extends Phaser.Scene {
       return;
     }
 
+    if (this.mode === 'skill') {
+      this.resolveSelectedSkill(tile);
+      return;
+    }
+
     const target = this.entityAt(tile, 'enemies');
     if (!target) {
       this.status = 'Choose an adjacent goblin to attack.';
@@ -64,6 +71,7 @@ export class BattleScene extends Phaser.Scene {
   private endTurn(): void {
     this.state = endPlayerTurn(this.state, randomDice);
     this.mode = 'move';
+    this.selectedSkillId = null;
     this.status =
       this.state.phase === 'defeat'
         ? 'The goblins overrun the chamber.'
@@ -76,6 +84,7 @@ export class BattleScene extends Phaser.Scene {
   private reset(): void {
     this.state = createGoblinCaveEncounter(this.selectedHeroId);
     this.mode = 'move';
+    this.selectedSkillId = null;
     this.status = 'Move up to 4 tiles, then strike when adjacent. Each action costs 1 AP.';
     this.render();
   }
@@ -103,14 +112,17 @@ export class BattleScene extends Phaser.Scene {
       mode: this.mode,
       status: this.status,
       heroOptions: this.heroOptions,
+      selectedSkillId: this.selectedSkillId,
       setMode: (mode) => {
         this.mode = mode;
+        this.selectedSkillId = null;
         this.status =
           mode === 'move'
             ? 'Highlighted cells are reachable this turn.'
             : 'Attack requires adjacency in this prototype.';
         this.render();
       },
+      useSkill: (skillId) => this.useSkill(skillId),
       selectHero: (heroId) => this.selectHero(heroId),
       endTurn: () => this.endTurn(),
       reset: () => this.reset(),
@@ -121,7 +133,56 @@ export class BattleScene extends Phaser.Scene {
     this.selectedHeroId = heroId;
     this.state = createGoblinCaveEncounter(heroId);
     this.mode = 'move';
+    this.selectedSkillId = null;
     this.status = `${this.activeHero().name} enters the first chamber.`;
+    this.render();
+  }
+
+  private useSkill(skillId: string): void {
+    const hero = this.activeHero();
+    const skill = hero.skills.find((candidate) => candidate.id === skillId);
+    if (!skill) {
+      return;
+    }
+
+    if (skill.target === 'self' || skill.target === 'ally') {
+      const result = resolveSkill(this.state, hero.id, skill.id, { targetId: hero.id }, randomDice);
+      this.state = result.state;
+      this.status = result.ok ? `${skill.name} resolves.` : result.reason ?? 'Invalid skill.';
+      this.selectedSkillId = null;
+      this.mode = 'move';
+      this.render();
+      return;
+    }
+
+    this.selectedSkillId = skill.id;
+    this.mode = 'skill';
+    this.status =
+      skill.target === 'position'
+        ? `Choose a tile for ${skill.name}.`
+        : `Choose an enemy for ${skill.name}.`;
+    this.render();
+  }
+
+  private resolveSelectedSkill(tile: Position): void {
+    const hero = this.activeHero();
+    const skill = hero.skills.find((candidate) => candidate.id === this.selectedSkillId);
+    if (!skill) {
+      this.mode = 'move';
+      this.selectedSkillId = null;
+      this.render();
+      return;
+    }
+
+    const target =
+      skill.target === 'position'
+        ? { position: tile }
+        : { targetId: (this.entityAt(tile, 'enemies') ?? this.nearestEnemyInRange(skill.range))?.id };
+    const result = resolveSkill(this.state, hero.id, skill.id, target, randomDice);
+    this.state = result.state;
+    this.status = result.ok ? `${skill.name} resolves.` : result.reason ?? 'Invalid skill.';
+    this.selectedSkillId = null;
+    this.mode = 'move';
     this.render();
   }
 
@@ -162,6 +223,38 @@ export class BattleScene extends Phaser.Scene {
         this.board.fillStyle(0x8ea45f, 0.26);
         this.board.fillRect(x + 6, y + 6, tileSize - 14, tileSize - 14);
       });
+      return;
+    }
+
+    if (this.mode === 'skill' && this.selectedSkillId) {
+      const skill = hero.skills.find((candidate) => candidate.id === this.selectedSkillId);
+      if (skill?.target === 'position') {
+        for (let y = 1; y < this.state.height - 1; y += 1) {
+          for (let x = 1; x < this.state.width - 1; x += 1) {
+            const position = { x, y };
+            if (Math.abs(position.x - hero.position.x) + Math.abs(position.y - hero.position.y) <= skill.range) {
+              const { x: px, y: py } = tileToPixels(position);
+              this.board.fillStyle(0xe56b31, 0.18);
+              this.board.fillRect(px + 6, py + 6, tileSize - 14, tileSize - 14);
+            }
+          }
+        }
+        return;
+      }
+
+      Object.values(this.state.entities)
+        .filter(
+          (entity) =>
+            entity.team === 'enemies' &&
+            entity.hp > 0 &&
+            Math.abs(entity.position.x - hero.position.x) + Math.abs(entity.position.y - hero.position.y) <=
+              (skill?.range ?? 0),
+        )
+        .forEach((entity) => {
+          const { x, y } = tileToPixels(entity.position);
+          this.board.lineStyle(4, 0xe56b31, 0.95);
+          this.board.strokeRect(x + 5, y + 5, tileSize - 12, tileSize - 12);
+        });
       return;
     }
 
@@ -220,14 +313,36 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private entityAt(position: Position, team: Entity['team']): Entity | null {
-    return (
-      Object.values(this.state.entities).find(
-        (entity) =>
-          entity.team === team &&
-          entity.hp > 0 &&
-          positionKey(entity.position) === positionKey(position),
-      ) ?? null
+    const candidates = Object.values(this.state.entities).filter(
+      (entity) => entity.team === team && entity.hp > 0,
     );
+    const exact = candidates.find((entity) => positionKey(entity.position) === positionKey(position));
+    if (exact) {
+      return exact;
+    }
+
+    const nearest = candidates
+      .map((entity) => ({
+        entity,
+        distance: Math.abs(entity.position.x - position.x) + Math.abs(entity.position.y - position.y),
+      }))
+      .sort((a, b) => a.distance - b.distance)[0];
+
+    return nearest && nearest.distance <= 1 ? nearest.entity : null;
+  }
+
+  private nearestEnemyInRange(range: number): Entity | null {
+    const hero = this.activeHero();
+    const nearest = Object.values(this.state.entities)
+      .filter((entity) => entity.team === 'enemies' && entity.hp > 0)
+      .map((entity) => ({
+        entity,
+        distance: Math.abs(entity.position.x - hero.position.x) + Math.abs(entity.position.y - hero.position.y),
+      }))
+      .filter((candidate) => candidate.distance <= range)
+      .sort((a, b) => a.distance - b.distance)[0];
+
+    return nearest?.entity ?? null;
   }
 
   private activeHero(): Entity {

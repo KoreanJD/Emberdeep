@@ -6,6 +6,8 @@ export type AttackOutcome = 'hit' | 'miss' | 'critical' | 'fumble';
 
 export type StatKey = 'strength' | 'agility' | 'intellect' | 'will';
 
+export type SkillTargetKind = 'self' | 'ally' | 'enemy' | 'position';
+
 export interface Position {
   x: number;
   y: number;
@@ -29,6 +31,21 @@ export interface AttackProfile {
   damageBonusStat?: StatKey;
 }
 
+export interface SkillDefinition {
+  id: string;
+  name: string;
+  cost: number;
+  target: SkillTargetKind;
+  range: number;
+  description: string;
+}
+
+export interface StatusEffect {
+  id: 'shielded' | 'rooted' | 'burning' | 'blessed';
+  name: string;
+  value: number;
+}
+
 export interface Entity {
   id: string;
   name: string;
@@ -42,6 +59,8 @@ export interface Entity {
   position: Position;
   stats: Stats;
   basicAttack: AttackProfile;
+  skills: SkillDefinition[];
+  statuses: StatusEffect[];
 }
 
 export type HeroId = 'hero_warrior' | 'hero_archer' | 'hero_pyromancer' | 'hero_cleric';
@@ -84,4 +103,9 @@ export interface ActionResult {
 
 export interface AttackResult extends ActionResult {
   roll?: AttackRoll;
+}
+
+export interface SkillTarget {
+  targetId?: string;
+  position?: Position;
 }
