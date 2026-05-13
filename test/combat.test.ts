@@ -45,7 +45,9 @@ describe('combat resolution', () => {
     expect(result.roll?.outcome).toBe('hit');
     expect(result.state.entities.hero_warrior.ap).toBe(1);
     expect(result.state.entities.goblin_1.hp).toBe(0);
-    expect(result.state.log.at(-1)?.message).toContain('5 + 4 = 9');
+    expect(result.state.log.at(-1)?.message).toContain('Attack: d20 12 + 4 = 16 vs DEF 12. Hit.');
+    expect(result.state.log.at(-1)?.message).toContain('Damage: 1d8 [5] + 4 = 9.');
+    expect(result.state.log.at(-1)?.message).toContain('Goblin Scout HP: 5 -> 0.');
   });
 
   test('a natural 20 doubles weapon dice before adding strength', () => {
@@ -55,7 +57,8 @@ describe('combat resolution', () => {
     expect(result.ok).toBe(true);
     expect(result.roll?.outcome).toBe('critical');
     expect(result.state.entities.goblin_1.hp).toBe(0);
-    expect(result.state.log.at(-1)?.message).toContain('2 + 3 + 4 = 9');
+    expect(result.state.log.at(-1)?.message).toContain('Critical hit.');
+    expect(result.state.log.at(-1)?.message).toContain('Damage: 2d8 [2 + 3] + 4 = 9.');
   });
 
   test('a natural 1 always misses but still spends AP', () => {
@@ -66,7 +69,8 @@ describe('combat resolution', () => {
     expect(result.roll?.outcome).toBe('fumble');
     expect(result.state.entities.hero_warrior.ap).toBe(1);
     expect(result.state.entities.goblin_1.hp).toBe(5);
-    expect(result.state.log.at(-1)?.message).toContain('natural 1');
+    expect(result.state.log.at(-1)?.message).toContain('Attack: natural 1 + 4 = 5 vs DEF 12. Fumble.');
+    expect(result.state.log.at(-1)?.message).toContain('Goblin Scout HP: 5 -> 5.');
   });
 
   test('an attack outside melee range is rejected without spending AP', () => {

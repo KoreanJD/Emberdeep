@@ -43,10 +43,7 @@ export function resolveAttack(
   if (outcome === 'miss' || outcome === 'fumble') {
     nextState = appendLog(nextState, {
       type: 'attack',
-      message:
-        outcome === 'fumble'
-          ? `${attacker.name} rolls a natural 1 and misses ${target.name}.`
-          : `${attacker.name} ${attacker.basicAttack.name} at ${target.name}: d20 ${d20} + ${bonus} = ${total} vs ${target.defense}. Miss.`,
+      message: `${attacker.name} ${attacker.basicAttack.name} ${target.name}. ${formatAttackCheck(roll)} ${target.name} HP: ${target.hp} -> ${target.hp}.`,
     });
 
     return { ok: true, state: nextState, roll };
@@ -54,9 +51,10 @@ export function resolveAttack(
 
   const damage = rollDamage(attacker, outcome === 'critical', dice);
   const mitigated = applyShield(target, damage.total);
+  const beforeHp = target.hp;
   const nextTarget = {
     ...mitigated.entity,
-    hp: Math.max(0, target.hp - mitigated.total),
+    hp: Math.max(0, beforeHp - mitigated.total),
   };
   const nextAttacker = {
     ...nextState.entities[attacker.id],
@@ -72,11 +70,11 @@ export function resolveAttack(
     },
   };
 
-  const criticalText = outcome === 'critical' ? ' Critical!' : '';
+  const criticalText = outcome === 'critical' ? ' Critical hit.' : '';
   const shieldText = mitigated.reduced > 0 ? ` Shield absorbs ${mitigated.reduced}.` : '';
   nextState = appendLog(nextState, {
     type: 'attack',
-    message: `${attacker.name} ${attacker.basicAttack.name} ${target.name}: d20 ${d20} + ${bonus} = ${total} vs ${target.defense}.${criticalText} Damage ${damage.detail} = ${damage.total}.${shieldText}`,
+    message: `${attacker.name} ${attacker.basicAttack.name} ${target.name}. ${formatAttackCheck(roll)}${criticalText} Damage: ${damage.detail} = ${damage.total}.${shieldText} ${target.name} HP: ${beforeHp} -> ${nextTarget.hp}.`,
   });
 
   if (allEnemiesDefeated(nextState)) {
@@ -126,16 +124,17 @@ function rollDamage(entity: Entity, critical: boolean, dice: DiceRoller): { tota
   const flatBonus = entity.basicAttack.damageBonus ?? 0;
   const bonus = statBonus + flatBonus;
   const total = rolls.reduce((sum, roll) => sum + roll, 0) + bonus;
-  const detailParts = [...rolls.map(String)];
-
-  if (bonus !== 0) {
-    detailParts.push(String(bonus));
-  }
 
   return {
     total,
-    detail: detailParts.join(' + '),
+    detail: `${diceCount}d${entity.basicAttack.damageDie} [${rolls.join(' + ')}]${bonus !== 0 ? ` + ${bonus}` : ''}`,
   };
+}
+
+function formatAttackCheck(roll: AttackRoll): string {
+  const d20Text = roll.d20 === 1 ? 'natural 1' : roll.d20 === 20 ? 'natural 20' : `d20 ${roll.d20}`;
+  const outcomeText = roll.outcome === 'critical' ? 'Hit' : roll.outcome[0].toUpperCase() + roll.outcome.slice(1);
+  return `Attack: ${d20Text} + ${roll.bonus} = ${roll.total} vs DEF ${roll.targetDefense}. ${outcomeText}.`;
 }
 
 function spendAp(state: GameState, entityId: string): GameState {
