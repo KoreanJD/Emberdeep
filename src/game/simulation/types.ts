@@ -74,6 +74,13 @@ export interface LogEntry {
   message: string;
 }
 
+export interface LastEnemyAction {
+  actorId: string;
+  actorName: string;
+  kind: 'move' | 'attack' | 'support' | 'special';
+  summary: string;
+}
+
 export interface GameState {
   activeHeroId: HeroId;
   currentRoomIndex: number;
@@ -87,6 +94,7 @@ export interface GameState {
   round: number;
   entities: Record<string, Entity>;
   log: LogEntry[];
+  lastEnemyAction?: LastEnemyAction;
 }
 
 export interface DiceRoller {

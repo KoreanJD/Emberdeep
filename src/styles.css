@@ -138,6 +138,7 @@ button:disabled {
 .reward-panel,
 .result-panel,
 .progress-panel,
+.enemy-action-panel,
 .status-panel,
 .enemy-list,
 .combat-log {
@@ -406,6 +407,25 @@ button:disabled {
 .status-panel p {
   margin: 0;
   line-height: 1.45;
+}
+
+.enemy-action-panel {
+  display: grid;
+  gap: 0.35rem;
+  border-color: rgba(229, 107, 49, 0.78);
+  background: rgba(76, 43, 34, 0.5);
+}
+
+.enemy-action-panel strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.enemy-action-panel p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
 .combat-log ol {

@@ -170,7 +170,15 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
   }
   const supportAction = maybeUseSupportAction(nextState, currentEnemy);
   if (supportAction) {
-    return supportAction;
+    const supported = Object.values(supportAction.entities).find(
+      (entity) => entity.team === 'enemies' && entity.hp > 0 && entity.hp < entity.maxHp,
+    );
+    return recordEnemyAction(
+      supportAction,
+      enemyId,
+      'support',
+      `${currentEnemy.name} supported ${supported?.name ?? 'an ally'}.`,
+    );
   }
 
   const activeEnemy = nextState.entities[enemyId];
@@ -181,7 +189,8 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
     manhattan(activeEnemy.position, hero.position) <= activeEnemy.basicAttack.range
   ) {
     nextState = resolveEnemyAttack(nextState, enemyId, hero.id, dice);
-    return replaceEnemyAttackLog(nextState, hero.id, enemyId);
+    nextState = replaceEnemyAttackLog(nextState, hero.id, enemyId);
+    return recordEnemyAction(nextState, enemyId, 'attack', `${activeEnemy.name} attacked ${hero.name}.`);
   }
 
   let movementSkipped = false;
@@ -224,6 +233,7 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
           message: `${currentEnemy.name} skitters to (${step.x}, ${step.y}).`,
         },
       );
+      nextState = recordEnemyAction(nextState, enemyId, 'move', `${currentEnemy.name} moved toward ${hero.name}.`);
     }
   }
 
@@ -232,6 +242,7 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
   if (movedEnemy.hp > 0 && currentHero.hp > 0 && isAdjacent(movedEnemy.position, currentHero.position)) {
     nextState = resolveEnemyAttack(nextState, enemyId, currentHero.id, dice);
     nextState = replaceEnemyAttackLog(nextState, currentHero.id, enemyId);
+    nextState = recordEnemyAction(nextState, enemyId, 'attack', `${movedEnemy.name} attacked ${currentHero.name}.`);
   }
 
   if (isDefeat(nextState)) {
@@ -304,6 +315,7 @@ function maybeUseBossAction(state: GameState, enemy: Entity): GameState | null {
         message: 'Gorvak calls two scouts from the forge smoke.',
       },
     );
+    nextState = recordEnemyAction(nextState, enemy.id, 'special', 'Gorvak summoned two scouts.');
   }
 
   nextBoss = nextState.entities[enemy.id];
@@ -330,9 +342,32 @@ function maybeUseBossAction(state: GameState, enemy: Entity): GameState | null {
         message: 'Gorvak enters a rage.',
       },
     );
+    nextState = recordEnemyAction(nextState, enemy.id, 'special', 'Gorvak entered a rage.');
   }
 
   return nextState === state ? null : nextState;
+}
+
+function recordEnemyAction(
+  state: GameState,
+  actorId: string,
+  kind: NonNullable<GameState['lastEnemyAction']>['kind'],
+  summary: string,
+): GameState {
+  const actor = state.entities[actorId];
+  if (!actor) {
+    return state;
+  }
+
+  return {
+    ...state,
+    lastEnemyAction: {
+      actorId,
+      actorName: actor.name,
+      kind,
+      summary,
+    },
+  };
 }
 
 function createBossScout(id: string, position: Position): Entity {

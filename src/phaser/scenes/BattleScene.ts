@@ -292,6 +292,11 @@ export class BattleScene extends Phaser.Scene {
     this.board.lineStyle(3, edge, 0.9);
     this.board.strokeCircle(centerX, centerY, 21);
 
+    if (entity.id === this.state.lastEnemyAction?.actorId) {
+      this.board.lineStyle(5, 0xf0b857, 0.95);
+      this.board.strokeCircle(centerX, centerY, 29);
+    }
+
     const label = this.add
       .text(centerX, centerY - 7, isHero ? heroInitial(entity) : 'G', {
         color: isHero ? '#24170d' : '#fff4df',

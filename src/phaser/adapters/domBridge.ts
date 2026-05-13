@@ -93,6 +93,8 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
         <p>${actions.status}</p>
       </section>
 
+      ${renderEnemyActionPanel(state)}
+
       ${state.phase === 'victory' || state.phase === 'defeat' ? renderResultPanel(state) : ''}
 
       ${
@@ -181,6 +183,20 @@ export function renderDungeonProgress(state: GameState): string {
       </div>
       <p>${current.name}</p>
       <small>${isBossRoom ? 'Final encounter' : next ? `Next: ${next.name}` : 'Final room'}</small>
+    </section>
+  `;
+}
+
+export function renderEnemyActionPanel(state: GameState): string {
+  if (!state.lastEnemyAction) {
+    return '';
+  }
+
+  return `
+    <section class="enemy-action-panel ${state.lastEnemyAction.kind}">
+      <span class="label">Enemy Action</span>
+      <strong>${state.lastEnemyAction.actorName}</strong>
+      <p>${state.lastEnemyAction.summary}</p>
     </section>
   `;
 }
