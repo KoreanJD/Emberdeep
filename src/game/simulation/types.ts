@@ -8,6 +8,8 @@ export type StatKey = 'strength' | 'agility' | 'intellect' | 'will';
 
 export type SkillTargetKind = 'self' | 'ally' | 'enemy' | 'position';
 
+export type MonsterAi = 'nearest_melee' | 'ranged' | 'bruiser' | 'support' | 'skirmisher';
+
 export interface Position {
   x: number;
   y: number;
@@ -61,6 +63,7 @@ export interface Entity {
   basicAttack: AttackProfile;
   skills: SkillDefinition[];
   statuses: StatusEffect[];
+  ai?: MonsterAi;
 }
 
 export type HeroId = 'hero_warrior' | 'hero_archer' | 'hero_pyromancer' | 'hero_cleric';

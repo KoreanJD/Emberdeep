@@ -68,7 +68,7 @@ describe('dungeon progression', () => {
     expect(result.state.roomName).toBe('Mushroom Gallery');
     expect(result.state.entities.hero_warrior.hp).toBe(12);
     expect(result.state.entities.hero_warrior.ap).toBe(2);
-    expect(Object.values(result.state.entities).filter((entity) => entity.team === 'enemies' && entity.hp > 0)).toHaveLength(3);
+    expect(Object.values(result.state.entities).filter((entity) => entity.team === 'enemies' && entity.hp > 0)).toHaveLength(4);
   });
 
   test('clearing the final combat room ends the dungeon with victory', () => {
@@ -77,22 +77,26 @@ describe('dungeon progression', () => {
       ...state,
       entities: {
         ...state.entities,
-        goblin_1: {
-          ...state.entities.goblin_1,
+        goblin_brawler_1: {
+          ...state.entities.goblin_brawler_1,
           position: { x: 2, y: 3 },
         },
-        goblin_2: {
-          ...state.entities.goblin_2,
+        goblin_archer_1: {
+          ...state.entities.goblin_archer_1,
           hp: 0,
         },
-        goblin_3: {
-          ...state.entities.goblin_3,
+        goblin_shaman_1: {
+          ...state.entities.goblin_shaman_1,
+          hp: 0,
+        },
+        cave_bat_1: {
+          ...state.entities.cave_bat_1,
           hp: 0,
         },
       },
     };
 
-    const result = resolveAttack(finalRoom, 'hero_warrior', 'goblin_1', fixedDice([20], [8, 8]));
+    const result = resolveAttack(finalRoom, 'hero_warrior', 'goblin_brawler_1', fixedDice([20], [8, 8]));
 
     expect(result.state.phase).toBe('victory');
     expect(result.state.log.at(-1)?.message).toContain('Victory');

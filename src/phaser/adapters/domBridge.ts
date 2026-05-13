@@ -26,7 +26,7 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
       <header class="hud-header">
         <div>
           <p class="eyebrow">Emberdeep: Goblin Cave</p>
-          <h1>First Chamber</h1>
+          <h1>${state.roomName}</h1>
         </div>
         <span class="round-pill">${phaseLabel(state.phase)}</span>
       </header>

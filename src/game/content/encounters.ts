@@ -194,55 +194,180 @@ const heroDefinitions: Record<HeroId, Entity> = {
   },
 };
 
-const goblinScout = (id: string, position: { x: number; y: number }): Entity => ({
-  id,
-  name: 'Goblin Scout',
-  team: 'enemies',
-  hp: 5,
-  maxHp: 5,
-  defense: 12,
-  move: 5,
-  ap: 0,
-  maxAp: 0,
-  position,
-  stats: {
-    strength: 1,
-    agility: 3,
-    intellect: 0,
-    will: 0,
+const monsterDefinitions: Record<string, Omit<Entity, 'id' | 'position'>> = {
+  goblin_scout: {
+    name: 'Goblin Scout',
+    team: 'enemies',
+    hp: 5,
+    maxHp: 5,
+    defense: 12,
+    move: 5,
+    ap: 0,
+    maxAp: 0,
+    stats: {
+      strength: 1,
+      agility: 3,
+      intellect: 0,
+      will: 0,
+    },
+    basicAttack: {
+      name: 'stabs',
+      range: 1,
+      attackBonus: 3,
+      damageDice: 1,
+      damageDie: 4,
+      damageBonus: 1,
+    },
+    skills: [],
+    statuses: [],
+    ai: 'nearest_melee',
   },
-  basicAttack: {
-    name: 'stabs',
-    range: 1,
-    attackBonus: 3,
-    damageDice: 1,
-    damageDie: 4,
-    damageBonus: 1,
+  goblin_archer: {
+    name: 'Goblin Archer',
+    team: 'enemies',
+    hp: 4,
+    maxHp: 4,
+    defense: 12,
+    move: 4,
+    ap: 0,
+    maxAp: 0,
+    stats: {
+      strength: 0,
+      agility: 3,
+      intellect: 0,
+      will: 0,
+    },
+    basicAttack: {
+      name: 'looses a shortbow at',
+      range: 5,
+      attackBonus: 3,
+      damageDice: 1,
+      damageDie: 6,
+    },
+    skills: [],
+    statuses: [],
+    ai: 'ranged',
   },
-  skills: [],
-  statuses: [],
-});
+  goblin_brawler: {
+    name: 'Goblin Brawler',
+    team: 'enemies',
+    hp: 9,
+    maxHp: 9,
+    defense: 13,
+    move: 4,
+    ap: 0,
+    maxAp: 0,
+    stats: {
+      strength: 3,
+      agility: 1,
+      intellect: 0,
+      will: 1,
+    },
+    basicAttack: {
+      name: 'clubs',
+      range: 1,
+      attackBonus: 4,
+      damageDice: 1,
+      damageDie: 6,
+      damageBonus: 2,
+    },
+    skills: [],
+    statuses: [],
+    ai: 'bruiser',
+  },
+  goblin_shaman: {
+    name: 'Goblin Shaman',
+    team: 'enemies',
+    hp: 6,
+    maxHp: 6,
+    defense: 11,
+    move: 4,
+    ap: 0,
+    maxAp: 0,
+    stats: {
+      strength: 0,
+      agility: 1,
+      intellect: 3,
+      will: 2,
+    },
+    basicAttack: {
+      name: 'casts a curse dart at',
+      range: 4,
+      attackBonus: 3,
+      damageDice: 1,
+      damageDie: 6,
+    },
+    skills: [],
+    statuses: [],
+    ai: 'support',
+  },
+  cave_bat: {
+    name: 'Cave Bat',
+    team: 'enemies',
+    hp: 3,
+    maxHp: 3,
+    defense: 13,
+    move: 6,
+    ap: 0,
+    maxAp: 0,
+    stats: {
+      strength: 0,
+      agility: 4,
+      intellect: 0,
+      will: 0,
+    },
+    basicAttack: {
+      name: 'bites',
+      range: 1,
+      attackBonus: 3,
+      damageDice: 1,
+      damageDie: 4,
+    },
+    skills: [],
+    statuses: [],
+    ai: 'skirmisher',
+  },
+};
+
+const createMonster = (monsterId: string, id: string, position: { x: number; y: number }): Entity => {
+  const definition = monsterDefinitions[monsterId] ?? monsterDefinitions.goblin_scout;
+
+  return {
+    id,
+    ...structuredClone(definition),
+    position,
+  };
+};
 
 const roomDefinitions = [
   {
     name: 'First Chamber',
     enemies: [
-      { id: 'goblin_1', position: { x: 6, y: 3 } },
-      { id: 'goblin_2', position: { x: 7, y: 4 } },
+      { id: 'goblin_1', monsterId: 'goblin_scout', position: { x: 6, y: 3 } },
+      { id: 'goblin_2', monsterId: 'goblin_scout', position: { x: 7, y: 4 } },
     ],
   },
   {
     name: 'Mushroom Gallery',
     enemies: [
-      { id: 'goblin_1', position: { x: 6, y: 2 } },
-      { id: 'goblin_2', position: { x: 7, y: 4 } },
-      { id: 'goblin_3', position: { x: 5, y: 5 } },
+      { id: 'goblin_brawler_1', monsterId: 'goblin_brawler', position: { x: 6, y: 2 } },
+      { id: 'goblin_archer_1', monsterId: 'goblin_archer', position: { x: 7, y: 4 } },
+      { id: 'goblin_shaman_1', monsterId: 'goblin_shaman', position: { x: 5, y: 5 } },
+      { id: 'cave_bat_1', monsterId: 'cave_bat', position: { x: 6, y: 5 } },
     ],
   },
 ];
 
 export function getHeroDefinitions(): Entity[] {
   return Object.values(heroDefinitions).map((hero) => structuredClone(hero));
+}
+
+export function getMonsterDefinitions(): Entity[] {
+  return Object.entries(monsterDefinitions).map(([id, definition]) => ({
+    id,
+    ...structuredClone(definition),
+    position: { x: 0, y: 0 },
+  }));
 }
 
 export function getDungeonRoomCount(): number {
@@ -278,7 +403,9 @@ export function createGoblinCaveEncounter(
     round: 1,
     entities: {
       [readyHero.id]: readyHero,
-      ...Object.fromEntries(room.enemies.map((enemy) => [enemy.id, goblinScout(enemy.id, enemy.position)])),
+      ...Object.fromEntries(
+        room.enemies.map((enemy) => [enemy.id, createMonster(enemy.monsterId, enemy.id, enemy.position)]),
+      ),
     },
     log: [
       {

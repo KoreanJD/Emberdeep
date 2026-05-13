@@ -1,6 +1,7 @@
 import { resolveEnemyAttack } from './combat';
 import { createGoblinCaveEncounter } from '../content/encounters';
 import { findStepToward, getReachablePositions, isAdjacent, positionKey } from './movement';
+import { manhattan } from './movement';
 import { resolveRoomClear } from './progression';
 import type { ActionResult, DiceRoller, Entity, GameState, Position } from './types';
 
@@ -163,6 +164,20 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
 
   let nextState = state;
   const currentEnemy = nextState.entities[enemyId];
+  const supportAction = maybeUseSupportAction(nextState, currentEnemy);
+  if (supportAction) {
+    return supportAction;
+  }
+
+  if (
+    currentEnemy.ai === 'ranged' &&
+    hero.hp > 0 &&
+    manhattan(currentEnemy.position, hero.position) <= currentEnemy.basicAttack.range
+  ) {
+    nextState = resolveEnemyAttack(nextState, enemyId, hero.id, dice);
+    return replaceEnemyAttackLog(nextState, hero.id, enemyId);
+  }
+
   let movementSkipped = false;
 
   if (!isAdjacent(currentEnemy.position, hero.position)) {
@@ -210,12 +225,7 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
   const currentHero = nextState.entities[hero.id];
   if (movedEnemy.hp > 0 && currentHero.hp > 0 && isAdjacent(movedEnemy.position, currentHero.position)) {
     nextState = resolveEnemyAttack(nextState, enemyId, currentHero.id, dice);
-    const afterAttackHero = nextState.entities[currentHero.id];
-    const afterAttackEnemy = nextState.entities[enemyId];
-    nextState = replaceLastLog(nextState, {
-      type: 'attack',
-      message: `${afterAttackEnemy.name} ${afterAttackEnemy.basicAttack.name} ${afterAttackHero.name}. ${nextState.log.at(-1)?.message ?? ''}`,
-    });
+    nextState = replaceEnemyAttackLog(nextState, currentHero.id, enemyId);
   }
 
   if (isDefeat(nextState)) {
@@ -226,6 +236,47 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
   }
 
   return nextState;
+}
+
+function maybeUseSupportAction(state: GameState, enemy: Entity): GameState | null {
+  if (enemy.ai !== 'support') {
+    return null;
+  }
+
+  const woundedAlly = Object.values(state.entities).find(
+    (entity) => entity.team === 'enemies' && entity.hp > 0 && entity.hp < entity.maxHp,
+  );
+  if (!woundedAlly) {
+    return null;
+  }
+
+  const healed = {
+    ...woundedAlly,
+    hp: Math.min(woundedAlly.maxHp, woundedAlly.hp + 3),
+  };
+
+  return appendLog(
+    {
+      ...state,
+      entities: {
+        ...state.entities,
+        [woundedAlly.id]: healed,
+      },
+    },
+    {
+      type: 'system',
+      message: `${enemy.name} mends ${woundedAlly.name} for 3.`,
+    },
+  );
+}
+
+function replaceEnemyAttackLog(state: GameState, heroId: string, enemyId: string): GameState {
+  const afterAttackHero = state.entities[heroId];
+  const afterAttackEnemy = state.entities[enemyId];
+  return replaceLastLog(state, {
+    type: 'attack',
+    message: `${afterAttackEnemy.name} ${afterAttackEnemy.basicAttack.name} ${afterAttackHero.name}. ${state.log.at(-1)?.message ?? ''}`,
+  });
 }
 
 function applyEnemyTurnStartStatuses(state: GameState): GameState {
