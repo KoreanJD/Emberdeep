@@ -137,6 +137,7 @@ button:disabled {
 .skill-panel,
 .reward-panel,
 .result-panel,
+.progress-panel,
 .status-panel,
 .enemy-list,
 .combat-log {
@@ -149,6 +150,68 @@ button:disabled {
 .hero-select {
   display: grid;
   gap: 0.7rem;
+}
+
+.progress-panel {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.progress-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.progress-header strong {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.room-track {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.room-node {
+  height: 0.45rem;
+  border: 1px solid rgba(82, 75, 57, 0.9);
+  border-radius: 999px;
+  background: rgba(42, 46, 34, 0.9);
+}
+
+.room-node.cleared {
+  border-color: rgba(142, 164, 95, 0.85);
+  background: var(--moss);
+}
+
+.room-node.current {
+  border-color: var(--gold);
+  background: var(--gold);
+  box-shadow: 0 0 14px rgba(240, 184, 87, 0.28);
+}
+
+.room-node.boss {
+  border-color: rgba(229, 107, 49, 0.95);
+}
+
+.progress-panel.boss-room {
+  border-color: rgba(229, 107, 49, 0.82);
+  background: rgba(76, 43, 34, 0.48);
+}
+
+.progress-panel p,
+.progress-panel small {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.progress-panel p {
+  color: var(--text);
+  font-weight: 800;
 }
 
 .hero-select-grid {

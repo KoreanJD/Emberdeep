@@ -1,3 +1,4 @@
+import { getDungeonRoomSummaries } from '../../game/content/encounters';
 import type { Entity, GameState, HeroId } from '../../game/simulation/types';
 
 export type ActionMode = 'move' | 'attack' | 'skill';
@@ -30,6 +31,8 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
         </div>
         <span class="round-pill">${phaseLabel(state.phase)}</span>
       </header>
+
+      ${renderDungeonProgress(state)}
 
       <section class="hero-card">
         ${renderEntity(hero)}
@@ -150,6 +153,36 @@ export function renderHud(root: HTMLElement, state: GameState, actions: HudActio
   root.querySelector<HTMLButtonElement>('#restart-run')?.addEventListener('click', actions.reset);
   root.querySelector<HTMLButtonElement>('#end-turn')?.addEventListener('click', actions.endTurn);
   root.querySelector<HTMLButtonElement>('#reset-game')?.addEventListener('click', actions.reset);
+}
+
+export function renderDungeonProgress(state: GameState): string {
+  const rooms = getDungeonRoomSummaries();
+  const current = rooms[state.currentRoomIndex] ?? rooms[0];
+  const next = rooms[state.currentRoomIndex + 1];
+  const isBossRoom = current?.kind === 'boss';
+
+  return `
+    <section class="progress-panel ${isBossRoom ? 'boss-room' : ''}" aria-label="Dungeon progress">
+      <div class="progress-header">
+        <span class="label">${isBossRoom ? 'Boss Room' : 'Combat'}</span>
+        <strong>Room ${state.currentRoomIndex + 1}/${rooms.length}</strong>
+      </div>
+      <div class="room-track">
+        ${rooms
+          .map(
+            (room) => `
+              <span
+                class="room-node ${room.index === state.currentRoomIndex ? 'current' : ''} ${room.index < state.currentRoomIndex ? 'cleared' : ''} ${room.kind === 'boss' ? 'boss' : ''}"
+                title="${room.name}"
+              ></span>
+            `,
+          )
+          .join('')}
+      </div>
+      <p>${current.name}</p>
+      <small>${isBossRoom ? 'Final encounter' : next ? `Next: ${next.name}` : 'Final room'}</small>
+    </section>
+  `;
 }
 
 export function renderResultPanel(state: GameState): string {

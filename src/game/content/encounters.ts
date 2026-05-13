@@ -391,6 +391,12 @@ const roomDefinitions = [
   },
 ];
 
+export interface DungeonRoomSummary {
+  index: number;
+  name: string;
+  kind: 'combat' | 'boss';
+}
+
 export function getHeroDefinitions(): Entity[] {
   return Object.values(heroDefinitions).map((hero) => structuredClone(hero));
 }
@@ -405,6 +411,14 @@ export function getMonsterDefinitions(): Entity[] {
 
 export function getDungeonRoomCount(): number {
   return roomDefinitions.length;
+}
+
+export function getDungeonRoomSummaries(): DungeonRoomSummary[] {
+  return roomDefinitions.map((room, index) => ({
+    index,
+    name: room.name,
+    kind: room.enemies.some((enemy) => enemy.monsterId === 'gorvak') ? 'boss' : 'combat',
+  }));
 }
 
 export function createGoblinCaveEncounter(
