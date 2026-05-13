@@ -135,6 +135,7 @@ function renderEntity(entity: Entity): string {
         <span style="width:${hpPercent}%"></span>
       </div>
       <small>${entity.hp}/${entity.maxHp} HP</small>
+      ${entity.statuses.length > 0 ? `<p class="status-tags">${entity.statuses.map((status) => status.name).join(' · ')}</p>` : ''}
     </article>
   `;
 }

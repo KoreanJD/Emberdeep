@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { createGoblinCaveEncounter, getHeroDefinitions } from '../src/game/content/encounters';
 import { resolveAttack } from '../src/game/simulation/combat';
+import { endPlayerTurn } from '../src/game/simulation/gameState';
 import { resolveSkill } from '../src/game/simulation/skills';
 import type { DiceRoller, GameState } from '../src/game/simulation/types';
 
@@ -117,6 +118,7 @@ describe('hero skills', () => {
     const bolt = resolveSkill(boltState, 'hero_pyromancer', 'fire_bolt', { targetId: 'goblin_1' }, fixedDice([8], [1]));
 
     expect(bolt.ok).toBe(true);
+    expect(bolt.state.entities.goblin_1.hp).toBe(4);
     expect(bolt.state.entities.goblin_1.statuses).toContainEqual({
       id: 'burning',
       name: 'Burning',
@@ -171,5 +173,60 @@ describe('hero skills', () => {
 
     expect(attack.roll?.total).toBe(12);
     expect(attack.state.entities.hero_cleric.statuses).toEqual([]);
+  });
+
+  test('burning damages enemies at the start of the enemy turn and can trigger victory', () => {
+    const state = placeGoblin(createGoblinCaveEncounter('hero_pyromancer'), 5, 3);
+    const burned = resolveSkill(state, 'hero_pyromancer', 'fire_bolt', { targetId: 'goblin_1' }, fixedDice([8], [1]));
+    const readyToBurn = {
+      ...burned.state,
+      entities: {
+        ...burned.state.entities,
+        goblin_1: {
+          ...burned.state.entities.goblin_1,
+          hp: 2,
+        },
+        goblin_2: {
+          ...burned.state.entities.goblin_2,
+          hp: 0,
+        },
+      },
+    };
+
+    const afterTurn = endPlayerTurn(readyToBurn, fixedDice([], []));
+
+    expect(afterTurn.phase).toBe('victory');
+    expect(afterTurn.entities.goblin_1.hp).toBe(0);
+    expect(afterTurn.log.some((entry) => entry.message.includes('Burning scorches Goblin Scout for 2'))).toBe(true);
+  });
+
+  test('rooted enemies skip movement once and then lose rooted', () => {
+    const state = placeGoblin(createGoblinCaveEncounter('hero_archer'), 5, 3);
+    const rooted = resolveSkill(state, 'hero_archer', 'pinning_shot', { targetId: 'goblin_1' }, fixedDice([8], [1]));
+    const readyToRoot = {
+      ...rooted.state,
+      entities: {
+        ...rooted.state.entities,
+        hero_archer: {
+          ...rooted.state.entities.hero_archer,
+          position: { x: 1, y: 3 },
+        },
+        goblin_1: {
+          ...rooted.state.entities.goblin_1,
+          hp: 5,
+          position: { x: 5, y: 3 },
+        },
+        goblin_2: {
+          ...rooted.state.entities.goblin_2,
+          hp: 0,
+        },
+      },
+    };
+
+    const afterTurn = endPlayerTurn(readyToRoot, fixedDice([], []));
+
+    expect(afterTurn.entities.goblin_1.position).toEqual({ x: 5, y: 3 });
+    expect(afterTurn.entities.goblin_1.statuses.some((status) => status.id === 'rooted')).toBe(false);
+    expect(afterTurn.log.some((entry) => entry.message.includes('Goblin Scout is rooted and cannot move'))).toBe(true);
   });
 });

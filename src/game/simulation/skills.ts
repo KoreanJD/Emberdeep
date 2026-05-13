@@ -65,8 +65,8 @@ export function resolveSkill(
       return resolveDamagingSkill(state, actor, skill, target, dice, {
         attackBonus: actor.stats.intellect,
         damageDice: 1,
-        damageDie: 8,
-        damageBonus: actor.stats.intellect,
+        damageDie: 4,
+        damageBonus: 0,
         logVerb: 'casts Fire Bolt at',
         status: { id: 'burning', name: 'Burning', value: 2 },
       });

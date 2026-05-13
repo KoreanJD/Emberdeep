@@ -57,6 +57,14 @@ export function endPlayerTurn(state: GameState, dice: DiceRoller): GameState {
     type: 'system',
     message: 'Enemy turn begins.',
   });
+  nextState = applyEnemyTurnStartStatuses(nextState);
+
+  if (isVictory(nextState)) {
+    return appendLog({ ...nextState, phase: 'victory' }, {
+      type: 'system',
+      message: 'Victory! The goblins collapse and the first chamber is secure.',
+    });
+  }
 
   for (const enemy of Object.values(nextState.entities).filter(
     (entity) => entity.team === 'enemies' && entity.hp > 0,
@@ -101,9 +109,29 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
 
   let nextState = state;
   const currentEnemy = nextState.entities[enemyId];
+  let movementSkipped = false;
 
   if (!isAdjacent(currentEnemy.position, hero.position)) {
-    const step = findStepToward(nextState, enemyId, hero.position);
+    if (currentEnemy.statuses.some((status) => status.id === 'rooted')) {
+      movementSkipped = true;
+      nextState = appendLog(
+        {
+          ...nextState,
+          entities: {
+            ...nextState.entities,
+            [enemyId]: {
+              ...currentEnemy,
+              statuses: currentEnemy.statuses.filter((status) => status.id !== 'rooted'),
+            },
+          },
+        },
+        {
+          type: 'system',
+          message: `${currentEnemy.name} is rooted and cannot move.`,
+        },
+      );
+    }
+    const step = movementSkipped ? null : findStepToward(nextState, enemyId, hero.position);
     if (step) {
       nextState = appendLog(
         {
@@ -141,6 +169,40 @@ function takeEnemyAction(state: GameState, enemyId: string, dice: DiceRoller): G
       type: 'system',
       message: 'Defeat. The party has fallen.',
     });
+  }
+
+  return nextState;
+}
+
+function applyEnemyTurnStartStatuses(state: GameState): GameState {
+  let nextState = state;
+
+  for (const entity of Object.values(nextState.entities).filter(
+    (candidate) => candidate.team === 'enemies' && candidate.hp > 0,
+  )) {
+    const burning = entity.statuses.find((status) => status.id === 'burning');
+    if (!burning) {
+      continue;
+    }
+
+    const nextHp = Math.max(0, entity.hp - burning.value);
+    nextState = appendLog(
+      {
+        ...nextState,
+        entities: {
+          ...nextState.entities,
+          [entity.id]: {
+            ...entity,
+            hp: nextHp,
+            statuses: nextHp <= 0 ? [] : entity.statuses,
+          },
+        },
+      },
+      {
+        type: 'system',
+        message: `Burning scorches ${entity.name} for ${burning.value}.`,
+      },
+    );
   }
 
   return nextState;
